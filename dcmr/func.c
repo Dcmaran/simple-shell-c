@@ -397,13 +397,6 @@ void execHistory(char *last_command, int style){
         }
             
     }
-    
-    
-
-}
-
-void copy_last_command(char **parsed_commands, char **last_command){
-    memcpy(last_command, parsed_commands, sizeof(last_command));
 }
 
 void runBatch(char *argv){
@@ -434,15 +427,7 @@ void runBatch(char *argv){
 
     while (fgets(print_batch, MAX_LINE / 2 + 1, file_print) != NULL)
     {
-        if (strncmp(print_batch, "\n", strlen("\n")) != 0)
-        {
-            printf("%s", print_batch);
-        }
-        else
-        {
-            continue;
-        }
-        
+        printf("%s", print_batch);      
     }
     
     printf("\nCommand execution: \n");
@@ -583,72 +568,8 @@ void runBatch(char *argv){
                 wait(NULL);
             }     
         }   
-
-    // while (fgets(user_input, MAX_LINE / 2 + 1, file) != NULL)
-    // {
-    //     if (style == 1)
-    //     {
-    //         if (user_input[strlen(user_input) - 1] == '\n')
-    //         {
-    //             user_input[strlen(user_input) - 1] = '\0';
-    //         }
-
-    //         if (strcspn(user_input, "\n") == MAX_LINE - 1)
-    //         {
-    //             printf("Line exceeds character limit\n");
-    //             for(int ch=getchar(); ch != '\n' && ch != EOF; ch=getchar());
-    //             continue;
-    //         }
-            
-    //         user_input[strlen(user_input) - 1] = '\0';
-            
-    //         style = verify_style_parallel(style, user_input);
-
-    //         if (style == 2)
-    //         {
-    //             continue;
-    //         }
-            
-    //         if (verifyHistory(user_input) == 0)
-    //         {
-    //             memcpy(last_command, user_input, sizeof(last_command));
-    //             last_command_exists = 1;
-    //         }
-                 
-    //         count_commands = 0;
-    //         count_commands = parse_input(user_input, parsed_commands);
-            
-    //         for (int i = 0; i < count_commands; i++)
-    //         {
-    //             if (verifyHistory(parsed_commands[i]) == 1)
-    //             {
-    //                 if (last_command_exists == 1)
-    //                 {
-    //                     execHistory(last_command, style);
-    //                     continue;
-    //                 }
-    //                 else
-    //                 {
-    //                     printf("No commands\n");
-    //                     break;
-    //                 }
-                    
-    //             }
-
-    //             if (pipeCheck(parsed_commands[i]) == 1)
-    //             {
-    //                 execPipeSequential(parsed_commands[i]);
-    //                 continue;
-    //             }
-                
-    //             parse_command_by_space(args, parsed_commands[i]);
-    //             verify_exit(args[0]);
-    //             exec_commands_sequential(args);
-    //         }
-            
-    //     }        
-    //}
     }
+    
     fclose(file_print);
     fclose(file);
     exit(EXIT_SUCCESS); 
