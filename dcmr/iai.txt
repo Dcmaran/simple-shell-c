@@ -1,0 +1,2 @@
+style parallel
+ls -1
