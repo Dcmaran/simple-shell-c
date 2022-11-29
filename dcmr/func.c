@@ -430,7 +430,7 @@ void runBatch(char *argv){
         printf("%s", print_batch);      
     }
     
-    printf("\nCommand execution: \n");
+    printf("\n\nCommand execution: \n");
 
     while (should_run) {
         if (style == 1)
