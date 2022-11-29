@@ -407,12 +407,12 @@ void copy_last_command(char **parsed_commands, char **last_command){
 }
 
 void runBatch(char *argv){
-
+    
     char *args[MAX_LINE/2 + 1];	/* command line has max of 40 arguments */
     char *parsed_commands[MAX_LINE]; /* parsed commands by ; */
     char last_command[MAX_LINE]; /* var to save last command */
     int should_run = 1;		/* flag to help exit program*/
-	int style = -1; /* 1 = sequential style // 2 = parallel style // 3 = batchfile*/
+	int style = 1; /* 1 = sequential style // 2 = parallel style*/
     char user_input[MAX_LINE];
     int count_commands;
     int last_command_exists = 0;
@@ -430,68 +430,88 @@ void runBatch(char *argv){
 
     }   
 
-    printf("Commands: \n");
+    printf("Read commands: \n");
 
     while (fgets(print_batch, MAX_LINE / 2 + 1, file_print) != NULL)
     {
-        printf("%s", print_batch);
+        if (strncmp(print_batch, "\n", strlen("\n")) != 0)
+        {
+            printf("%s", print_batch);
+        }
+        else
+        {
+            continue;
+        }
+        
     }
     
-    printf("\n\nExecution: \n");
+    printf("\nCommand execution: \n");
 
     while (should_run) {
         if (style == 1)
         {
-            while (fgets(user_input, MAX_LINE, file) != NULL)
-            {     
+            while (!fgets(user_input, MAX_LINE, file))
+            {
+                exit(1);
+            }
+            
+            if (strcspn(user_input, "\n") == MAX_LINE - 1)
+            {
+                printf("Line exceeds character limit\n");
+                for(int ch=getchar(); ch != '\n' && ch != EOF; ch=getchar());
+                continue;
+            }
+            
+            if (user_input[strlen(user_input) - 1] == '\n')
+            {
                 user_input[strlen(user_input) - 1] = '\0';
-                
-                style = verify_style_parallel(style, user_input);
+            }
+            
+            style = verify_style_parallel(style, user_input);
 
-                if (style == 2)
+            if (style == 2)
+            {
+                continue;
+            }
+            
+            if (verifyHistory(user_input) == 0)
+            {
+                memcpy(last_command, user_input, sizeof(last_command));
+                last_command_exists = 1;
+            }
+                 
+            count_commands = 0;
+            count_commands = parse_input(user_input, parsed_commands);
+            
+            for (int i = 0; i < count_commands; i++)
+            {
+                if (verifyHistory(parsed_commands[i]) == 1)
                 {
+                    if (last_command_exists == 1)
+                    {
+                        execHistory(last_command, style);
+                        continue;
+                    }
+                    else
+                    {
+                        printf("No commands\n");
+                        break;
+                    }
+                    
+                }
+
+                if (pipeCheck(parsed_commands[i]) == 1)
+                {
+                    execPipeSequential(parsed_commands[i]);
                     continue;
                 }
                 
-                if (verifyHistory(user_input) == 0)
-                {
-                    memcpy(last_command, user_input, sizeof(last_command));
-                    last_command_exists = 1;
-                }
-                    
-                count_commands = 0;
-                count_commands = parse_input(user_input, parsed_commands);
-                
-                for (int i = 0; i < count_commands; i++)
-                {
-                    if (verifyHistory(parsed_commands[i]) == 1)
-                    {
-                        if (last_command_exists == 1)
-                        {
-                            execHistory(last_command, style);
-                            continue;
-                        }
-                        else
-                        {
-                            printf("No commands\n");
-                            break;
-                        }
-                        
-                    }
-
-                    if (pipeCheck(parsed_commands[i]) == 1)
-                    {
-                        execPipeSequential(parsed_commands[i]);
-                        continue;
-                    }
-                    
-                    parse_command_by_space(args, parsed_commands[i]);
-                    verify_exit(args[0]);
-                    exec_commands_sequential(args);
-                }
-                
+                parse_command_by_space(args, parsed_commands[i]);
+                verify_exit(args[0]);
+                exec_commands_sequential(args);
             }
-        }
+            
+        }  
 
         if (style == 2)
         {
@@ -507,7 +527,10 @@ void runBatch(char *argv){
                 continue;
             }
             
-            user_input[strlen(user_input) - 1] = '\0';
+            if (user_input[strlen(user_input) - 1] == '\n')
+            {
+                user_input[strlen(user_input) - 1] = '\0';
+            }
 
             style = verify_style_sequential(style, user_input);   
             
@@ -560,9 +583,73 @@ void runBatch(char *argv){
                 wait(NULL);
             }     
         }   
-    }
 
+    // while (fgets(user_input, MAX_LINE / 2 + 1, file) != NULL)
+    // {
+    //     if (style == 1)
+    //     {
+    //         if (user_input[strlen(user_input) - 1] == '\n')
+    //         {
+    //             user_input[strlen(user_input) - 1] = '\0';
+    //         }
+
+    //         if (strcspn(user_input, "\n") == MAX_LINE - 1)
+    //         {
+    //             printf("Line exceeds character limit\n");
+    //             for(int ch=getchar(); ch != '\n' && ch != EOF; ch=getchar());
+    //             continue;
+    //         }
+            
+    //         user_input[strlen(user_input) - 1] = '\0';
+            
+    //         style = verify_style_parallel(style, user_input);
+
+    //         if (style == 2)
+    //         {
+    //             continue;
+    //         }
+            
+    //         if (verifyHistory(user_input) == 0)
+    //         {
+    //             memcpy(last_command, user_input, sizeof(last_command));
+    //             last_command_exists = 1;
+    //         }
+                 
+    //         count_commands = 0;
+    //         count_commands = parse_input(user_input, parsed_commands);
+            
+    //         for (int i = 0; i < count_commands; i++)
+    //         {
+    //             if (verifyHistory(parsed_commands[i]) == 1)
+    //             {
+    //                 if (last_command_exists == 1)
+    //                 {
+    //                     execHistory(last_command, style);
+    //                     continue;
+    //                 }
+    //                 else
+    //                 {
+    //                     printf("No commands\n");
+    //                     break;
+    //                 }
+                    
+    //             }
+
+    //             if (pipeCheck(parsed_commands[i]) == 1)
+    //             {
+    //                 execPipeSequential(parsed_commands[i]);
+    //                 continue;
+    //             }
+                
+    //             parse_command_by_space(args, parsed_commands[i]);
+    //             verify_exit(args[0]);
+    //             exec_commands_sequential(args);
+    //         }
+            
+    //     }        
+    //}
+    }
     fclose(file_print);
     fclose(file);
-    exit(EXIT_SUCCESS);
+    exit(EXIT_SUCCESS); 
 }

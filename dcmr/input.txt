@@ -1,1 +1,11 @@
-ls -1; ps
+ls -a; echo 123;
+exit
+lol
+;; ls | rev
+
+
+
+
+
+
+
