@@ -1,5 +1,3 @@
-void clean(char **args, char **parsed_commands);
-
 void parse_command_by_space(char **args, char *command);
 
 void exec_commands_parallel(char **args);
@@ -20,8 +18,6 @@ void verify_exit(char *input);
 
 int verify_history(char *input, int ls_exists, char *last_command, int style);
 
-void copy_array(char **array1, char **array2);
-
 int pipeCheck(char *user_input);
 
 void execPipeSequential(char *user_input);
@@ -32,4 +28,6 @@ void parse_by_pipe(char *input, char **commands);
 
 int verifyHistory(char *user_input);
 
-void execHistory(char *last_command, int style, int count_commands);
+void execHistory(char *last_command, int style);
+
+void runBatch(char *argv);
