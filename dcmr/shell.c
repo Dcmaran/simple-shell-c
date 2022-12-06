@@ -5,6 +5,8 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 #include "func.h"
 
@@ -87,13 +89,25 @@ int main(int argc, char *argv[])
                     }
                     
                 }
+                
+                if (send_Append_RedirectCheck(parsed_commands[i]) == 1)
+                {
+                    execSend_Append_RedirectSequential(parsed_commands[i]);
+                    continue;
+                } 
 
-                if (pipeCheck(parsed_commands[i]) == 1)
+                else if (sendRedirectCheck(parsed_commands[i]) == 1)
+                {
+                    execSendRedirectSequential(parsed_commands[i]);
+                    continue;
+                }               
+                
+                else if (pipeCheck(parsed_commands[i]) == 1)
                 {
                     execPipeSequential(parsed_commands[i]);
                     continue;
                 }
-                
+
                 parse_command_by_space(args, parsed_commands[i]);
                 verify_exit(args[0]);
                 exec_commands_sequential(args);
@@ -157,6 +171,18 @@ int main(int argc, char *argv[])
                     continue;
                 }
 
+                else if (send_Append_RedirectCheck(parsed_commands[i]) == 1)
+                {
+                    execSend_Append_RedirectParallel(parsed_commands[i]);
+                    continue;
+                } 
+
+                else if (sendRedirectCheck(parsed_commands[i]) == 1)
+                {
+                    execSendRedirectParallel(parsed_commands[i]);
+                    continue;
+                }
+
                 parse_command_by_space(args, parsed_commands[i]);
                 verify_exit(args[0]);
 
@@ -173,39 +199,9 @@ int main(int argc, char *argv[])
         if (style == 3)
         {
             runBatch(argv[1]);
-            /*int style_batch = 1; 
-
-            FILE *file, *file_print;
-            
-            file = fopen(argv[1], "r");
-            file_print = fopen(argv[1], "r");
-
-            if (file == NULL && file_print == NULL)
-            {
-                printf("Could not open file\n");
-                exit(EXIT_FAILURE);
-
-            }
-            else
-            {
-                char print_batch[80];
-                while (fgets(print_batch, MAX_LINE / 2 + 1, file_print) != NULL)
-                {
-                    printf("%s", print_batch);
-                }
-                
-                printf("\n");
-                        
-            }
-          
-          fclose(file_print); */
-
         } 
 
     } 
     
     return 0;            
 }
-        
-        
-	

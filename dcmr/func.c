@@ -5,6 +5,8 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 #include "func.h"
 
 
@@ -68,7 +70,7 @@ void exec_commands_sequential(char **args)
     {
         wait_pid = wait(NULL);
     }    
-    
+
 }
 
 int verify_command_exists(char *command, char *commands[], int index)
@@ -120,6 +122,38 @@ void parse_by_pipe(char *input, char **commands){
         commands[i] = token;
         ++i;
         token = strtok(NULL, "|");
+        count++;
+
+    }
+}
+
+void parse_by_send_redirect(char *input, char **commands){
+
+    char* token = strtok(input, ">");
+    int i = 0;
+    int count = 0;
+
+    while (token != NULL)
+    {
+        commands[i] = token;
+        ++i;
+        token = strtok(NULL, ">");
+        count++;
+
+    }
+}
+
+void parse_by_send_append_redirect(char *input, char **commands){
+
+    char* token = strtok(input, ">>");
+    int i = 0;
+    int count = 0;
+
+    while (token != NULL)
+    {
+        commands[i] = token;
+        ++i;
+        token = strtok(NULL, ">>");
         count++;
 
     }
@@ -180,7 +214,6 @@ void verify_exit(char *input)
 
 }
 
-
 int pipeCheck(char *user_input){
 
     int status = 0;
@@ -191,6 +224,234 @@ int pipeCheck(char *user_input){
     } 
     
     return status;
+}
+
+int sendRedirectCheck(char *user_input){
+
+    int status = 0;
+ 
+    if(strchr(user_input, '>') != NULL)
+    {
+        status = 1;
+    } 
+    
+    return status;
+}
+
+int recieveRedirectCheck(char *user_input){
+
+    int status = 0;
+ 
+    if(strchr(user_input, '<') != NULL)
+    {
+        status = 1;
+    } 
+    
+    return status;
+}
+
+int send_Append_RedirectCheck(char *user_input){
+
+    int status = 0;
+
+    for (int i = 0; user_input[i] != '\0' ; i++)
+    {
+        if (user_input[i] == '>' && user_input[i+1] == '>')
+        {
+            status = 1;
+        }
+        
+    }
+
+    return status;    
+        
+}
+
+void execSend_Append_RedirectSequential(char *user_input){
+    
+    pid_t pid1;
+    char *command[MAX_LINE];
+    char *args1[MAX_LINE];
+    char *args2[MAX_LINE];
+    parse_by_send_append_redirect(user_input, command);
+    int command_return;
+
+    char *command_redirect = strdup(command[0]);
+    char *file_name = strdup(command[1]);
+
+    parse_command_by_space(args1, command_redirect);
+    parse_command_by_space(args2, file_name);
+
+    pid1 = fork();
+    
+    if (pid1 == 0)
+    {
+        int file_desc = open(args2[0], O_CREAT | O_RDWR | O_APPEND,
+        S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+        
+        dup2(file_desc, STDOUT_FILENO);
+        
+        if (command_return = execvp(args1[0], args1) == -1)
+        {
+            fprintf(stderr, "command not found\n");
+            exit(EXIT_FAILURE);
+        }
+        else
+        {
+            dup2(command_return, STDIN_FILENO);
+        }
+        
+        close(file_desc);
+        exit(1);
+    }
+    else if (pid1 < 0)
+    {
+        fprintf(stderr, "fork failed");   
+        exit(EXIT_FAILURE);  
+    }
+    else
+    {
+        wait(NULL);
+    } 
+    
+}
+
+void execSend_Append_RedirectParallel(char *user_input){
+    
+    pid_t pid1;
+    char *command[MAX_LINE];
+    char *args1[MAX_LINE];
+    char *args2[MAX_LINE];
+    parse_by_send_append_redirect(user_input, command);
+    int command_return;
+
+    char *command_redirect = strdup(command[0]);
+    char *file_name = strdup(command[1]);
+
+    parse_command_by_space(args1, command_redirect);
+    parse_command_by_space(args2, file_name);
+
+    pid1 = fork();
+    
+    if (pid1 == 0)
+    {
+        int file_desc = open(args2[0], O_CREAT | O_RDWR | O_APPEND,
+        S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+        
+        dup2(file_desc, STDOUT_FILENO);
+        
+        if (command_return = execvp(args1[0], args1) == -1)
+        {
+            fprintf(stderr, "command not found\n");
+            exit(EXIT_FAILURE);
+        }
+        else
+        {
+            dup2(command_return, STDIN_FILENO);
+        }
+        
+        close(file_desc);
+        exit(1);
+    }
+    else if (pid1 < 0)
+    {
+        fprintf(stderr, "fork failed");   
+        exit(EXIT_FAILURE);  
+    }
+    
+}
+
+void execSendRedirectParallel(char *user_input){
+    
+    pid_t pid1;
+    char *command[MAX_LINE];
+    char *args1[MAX_LINE];
+    char *args2[MAX_LINE];
+    parse_by_send_redirect(user_input, command);
+    int command_return;
+
+    char *command_redirect = strdup(command[0]);
+    char *file_name = strdup(command[1]);
+
+    parse_command_by_space(args1, command_redirect);
+    parse_command_by_space(args2, file_name);
+
+    pid1 = fork();
+    
+    if (pid1 == 0)
+    {
+        int file_desc = open(args2[0], O_WRONLY | O_CREAT | O_TRUNC,
+        S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+        
+        dup2(file_desc, STDOUT_FILENO);
+        
+        if (command_return = execvp(args1[0], args1) == -1)
+        {
+            fprintf(stderr, "command not found\n");
+            exit(EXIT_FAILURE);
+        }
+        else
+        {
+            dup2(command_return, STDIN_FILENO);
+        }
+        
+        close(file_desc);
+        exit(1);
+    }
+    else if (pid1 < 0)
+    {
+        fprintf(stderr, "fork failed");   
+        exit(EXIT_FAILURE);  
+    }
+
+}
+
+void execSendRedirectSequential(char *user_input){
+    
+    pid_t pid1;
+    char *command[MAX_LINE];
+    char *args1[MAX_LINE];
+    char *args2[MAX_LINE];
+    parse_by_send_redirect(user_input, command);
+    int command_return;
+
+    char *command_redirect = strdup(command[0]);
+    char *file_name = strdup(command[1]);
+
+    parse_command_by_space(args1, command_redirect);
+    parse_command_by_space(args2, file_name);
+
+    pid1 = fork();
+    
+    if (pid1 == 0)
+    {
+        int file_desc = open(args2[0], O_WRONLY | O_CREAT | O_TRUNC,
+        S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+        
+        dup2(file_desc, STDOUT_FILENO);
+        
+        if (command_return = execvp(args1[0], args1) == -1)
+        {
+            fprintf(stderr, "command not found\n");
+            exit(EXIT_FAILURE);
+        }
+        else
+        {
+            dup2(command_return, STDIN_FILENO);
+        }
+        
+        close(file_desc);
+        exit(1);
+    }
+    else if (pid1 < 0)
+    {
+        fprintf(stderr, "fork failed");   
+        exit(EXIT_FAILURE);  
+    }
+    else
+    {
+        wait(NULL);
+    } 
 }
 
 void execPipeSequential(char *user_input){
@@ -273,7 +534,9 @@ void execPipeParallel(char *user_input){
     char *args1[MAX_LINE];
     char *args2[MAX_LINE];
     char *command[MAX_LINE];
+    
     parse_by_pipe(user_input, command);
+    
     char *pipe_arg_1 = strdup(command[0]);
     char *pipe_arg_2 = strdup(command[1]);
 
@@ -329,10 +592,6 @@ void execPipeParallel(char *user_input){
 
     close(file_desc[0]);
     close(file_desc[1]);
-}
-
-void execRedirect(){
-
 }
 
 int verifyHistory(char *user_input){
@@ -491,6 +750,18 @@ void runBatch(char *argv){
                     continue;
                 }
                 
+                else if (send_Append_RedirectCheck(parsed_commands[i]) == 1)
+                {
+                    execSend_Append_RedirectSequential(parsed_commands[i]);
+                    continue;
+                }
+
+                else if (sendRedirectCheck(parsed_commands[i]) == 1)
+                {
+                    execSendRedirectSequential(parsed_commands[i]);
+                    continue;
+                }
+                
                 parse_command_by_space(args, parsed_commands[i]);
                 verify_exit(args[0]);
                 exec_commands_sequential(args);
@@ -553,6 +824,18 @@ void runBatch(char *argv){
                 if (pipeCheck(parsed_commands[i]) == 1)
                 {
                     execPipeParallel(parsed_commands[i]);
+                    continue;
+                }
+
+                else if (send_Append_RedirectCheck(parsed_commands[i]) == 1)
+                {
+                    execSend_Append_RedirectParallel(parsed_commands[i]);
+                    continue;
+                } 
+
+                else if (sendRedirectCheck(parsed_commands[i]) == 1)
+                {
+                    execSendRedirectParallel(parsed_commands[i]);
                     continue;
                 }
 
